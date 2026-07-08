@@ -6,114 +6,41 @@ The workflow collects cybersecurity news from RSS feeds, extracts article conten
 
 ---
 
-## Workflow Architecture
+## Architecture
 
-┌─────────────────────────────┐
-│       Manual Trigger        |
-│                             │
-└─────────────┬───────────────┘
-              │
-              ▼
-┌─────────────────────────────┐
-│       RSS Feed Node         │
-│ Cybersecurity News Sources  │
-└─────────────┬───────────────┘
-              │
-              ▼
-┌─────────────────────────────┐
-│      HTTP Request Node      │
-│ Fetch Full Article Content  │
-└─────────────┬───────────────┘
-              │
-              ▼
-┌─────────────────────────────┐
-│ Extract Article Content     │
-│ Parse HTML / JSON Payloads  │
-└─────────────┬───────────────┘
-              │
-              ▼
-┌─────────────────────────────┐
-│     Loop Over Articles      │
-│ Process One Article At Time │
-└─────────────┬───────────────┘
-              │
-              ▼
-┌─────────────────────────────┐
-│         Ollama LLM          │
-│ Generate Article Summary    │
-│ What Happened               │
-│ Why It Matters              │
-│ What To Do                  │
-└─────────────┬───────────────┘
-              │
-              ▼
-┌─────────────────────────────┐
-│ Extract Ollama Response     │
-│ Normalize Output Structure  │
-└─────────────┬───────────────┘
-              │
-              ▼
-       (Return To Loop)
-              │
-              ▼
-┌─────────────────────────────┐
-│       Aggregate Node        │
-│ Combine All Summaries       │
-└─────────────┬───────────────┘
-              │
-              ▼
-┌─────────────────────────────┐
-│ Construct HTML Email        │
-│ Build Daily Intelligence    │
-│ Digest                      │
-└─────────────┬───────────────┘
-              │
-              ▼
-┌─────────────────────────────┐
-│ Gmail Node                  │
-│ Send Daily Digest           │
-└─────────────────────────────┘
 
-### Infrastructure Architecture
+```mermaid
+flowchart TD
+    A[Schedule Trigger] --> B[RSS Feed]
+    B --> C[HTTP Request]
+    C --> D[Extract Article Content]
 
-┌─────────────────────────────────────┐
-│              MacBook                │
-│         VMware Fusion Pro           │
-└─────────────────┬───────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────┐
-│            Ubuntu VM                │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │ Docker Engine               │    │
-│  │                             │    │
-│  │  ┌──────────────────────┐   │    │
-│  │  │ n8n Container        │   │    │
-│  │  │                      │   │    │
-│  │  │ Workflow Engine      │   │    │
-│  │  │ Schedule Trigger     │   │    │
-│  │  └──────────┬───────────┘   │    │
-│  │             │               │    │
-│  │  ┌──────────▼───────────┐   │    │
-│  │  │ PostgreSQL Container │   │    │
-│  │  │ Workflow Storage     │   │    │
-│  │  └──────────────────────┘   │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │ Ollama                      │    │
-│  │ Local LLM (Mistral/Llama)   │    │
-│  └─────────────────────────────┘    │
-└─────────────────┬───────────────────┘
-                  │
-     ┌────────────┼────────────┐
-     │            │            │
-     ▼            ▼            ▼
+    D --> E[Loop Over Articles]
+    E --> F[Ollama LLM]
+    F --> G[Extract Ollama Response]
+    G --> E
 
- RSS Feeds     Gmail API    Email Inbox
- News Sources    OAuth      Daily Digest
- 
+    E --> H[Aggregate Results]
+    H --> I[Construct HTML Email]
+    I --> J[Gmail Delivery]
+
+    K[Docker Container: n8n] -. hosts .-> A
+    K -. hosts .-> B
+    K -. hosts .-> C
+    K -. hosts .-> D
+
+    L[Ollama Service] -. processes .-> F
+
+    M[PostgreSQL] -. stores .-> K
+
+    N[Ubuntu VM] -. runs .-> K
+    N -. runs .-> L
+    N -. runs .-> M
+
+    O[VMware Fusion Pro] -. hosts .-> N
+    P[MacBook] -. hosts .-> O
+```
+
 ---
 
 ## Features
