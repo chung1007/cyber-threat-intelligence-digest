@@ -11,7 +11,7 @@ The workflow collects cybersecurity news from RSS feeds, extracts article conten
 
 ```mermaid
 flowchart TD
-    A[Schedule Trigger] --> B[RSS Feed]
+    A[Workflow Trigger] --> B[RSS Feed]
     B --> C[HTTP Request]
     C --> D[Extract Article Content]
 
